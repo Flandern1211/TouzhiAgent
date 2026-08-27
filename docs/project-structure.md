@@ -13,7 +13,12 @@
 │   ├── requirements/
 │   │   └── fund-agent-v1-requirements.md
 │   ├── coding/
-│   │   └── PRD.md
+│   │   ├── PRD.md
+│   │   ├── TSD.md
+│   │   ├── DESIGN.md
+│   │   ├── API.md
+│   │   └── TSD/
+│   │       └── 2026-08-27-fund-agent-v1-minimal-design.md
 │   ├── project-structure.md
 │   └── project-conventions.md
 ├── src/
