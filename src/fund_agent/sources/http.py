@@ -285,8 +285,6 @@ class CrawlerApiSource(_HttpEvidenceSource):
         headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
         with httpx.Client(timeout=self.timeout_seconds, transport=self._transport, headers=headers) as client:
             return client.get(endpoint, params=params)
-
-
 class SourceRouter:
     """Choose a configured external source first and fall back to an internal source."""
 

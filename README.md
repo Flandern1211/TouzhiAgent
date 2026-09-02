@@ -3,6 +3,7 @@
 面向中国公募基金的个人研究辅助与风险监测 Agent。
 
 TouzhiAgent 支持手动维护基金候选和当前持仓，结合净值、公告、财经新闻、行业新闻与网络舆情，帮助用户比较基金、分析组合风险并持续发现需要关注的变化。
+当前状态：v1 最小闭环已实现，支持本机运行和测试；外部数据源与远程 MySQL 需要通过环境变量配置。
 
 > 仅用于研究和决策辅助，不构成投资建议。历史表现不代表未来表现。
 
@@ -55,3 +56,13 @@ python -m fund_agent
 python -m pytest -q
 python -m compileall -q src tests
 ```
+- [PRD 索引](docs/coding/PRD.md)
+
+## 本机运行
+
+```powershell
+python -m pip install -e ".[dev]"
+python -m fund_agent
+```
+
+浏览器访问 `http://127.0.0.1:8000`。未配置数据库时使用内存存储；配置远程 MySQL 后自动使用 MySQL 持久化。环境变量前缀为 `FUND_AGENT_`，详见 [API 合同](docs/coding/API.md) 和 [需求规格](docs/requirements/fund-agent-v1-requirements.md)。

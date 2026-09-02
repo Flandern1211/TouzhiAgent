@@ -132,8 +132,6 @@ def test_screening_derives_missing_metrics_from_tracked_market_evidence():
 
     assert result[0].components["return"] > 0
     assert not any("指标不足" in warning for warning in result[0].warnings)
-
-
 def test_application_builds_internal_sources_and_external_first_routers():
     settings = Settings.from_env(
         {

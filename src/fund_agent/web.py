@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from fund_agent.application import FundAgentApplication, parse_json_object
 from fund_agent.domain.models import Evidence, EvidenceStatus, FundAnalysis, FundShare, HoldingSnapshot, NavMetrics, SourceType
@@ -52,6 +52,29 @@ class TrackingInput(BaseModel):
     evidence: list[Evidence] = Field(default_factory=list)
 
 
+class SettingsInput(BaseModel):
+    """Editable non-secret settings; omitted (null) fields keep their current value."""
+
+    full_analysis_time: str | None = None
+    analysis_timezone: str | None = None
+    analysis_weekdays: list[int] | None = None
+    evidence_interval_hours: float | None = Field(default=None, gt=0)
+    scheduler_enabled: bool | None = None
+    nav_drop_threshold: float | None = None
+    drawdown_threshold: float | None = None
+    volatility_threshold: float | None = None
+    stale_hours: float | None = Field(default=None, gt=0)
+    official_confidence: float | None = Field(default=None, ge=0, le=1)
+    screening_focus_threshold: float | None = Field(default=None, ge=0, le=1)
+    screening_observe_threshold: float | None = Field(default=None, ge=0, le=1)
+    screening_neutral_threshold: float | None = Field(default=None, ge=0, le=1)
+    screening_weights: dict[str, float] | None = None
+    market_endpoint: str | None = None
+    official_endpoint: str | None = None
+    news_endpoint: str | None = None
+    sentiment_endpoint: str | None = None
+
+
 def _fund(value: FundInput) -> FundShare:
     metadata = value.model_dump(exclude={"code"})
     return normalize_fund_input(value.code, metadata)
@@ -80,6 +103,13 @@ def build_app(application: FundAgentApplication | None = None) -> FastAPI:
     @app.get("/api/settings")
     def settings() -> dict[str, Any]:
         return container.settings.model_dump()
+
+    @app.put("/api/settings", response_model=dict[str, Any])
+    def update_settings(value: SettingsInput) -> dict[str, Any]:
+        try:
+            return container.update_settings(value.model_dump()).model_dump()
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=[{"msg": error.get("msg"), "loc": error.get("loc")} for error in exc.errors()]) from exc
 
     @app.post("/api/funds", response_model=FundShare, status_code=201)
     def add_fund(value: FundInput) -> FundShare:

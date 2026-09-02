@@ -151,8 +151,6 @@ def test_public_source_extracts_eastmoney_nav_series_from_data_payload():
     assert result[0].metadata["nav"] == [1.1, 1.12]
     assert result[0].metadata["latest_value"] == 1.12
     assert result[0].effective_at == datetime(2026, 8, 28, tzinfo=timezone.utc)
-
-
 def test_source_router_prefers_configured_external_evidence():
     external = _StaticAdapter(
         SourceType.NEWS,

@@ -172,6 +172,43 @@ class FundAgentApplication:
     def stop(self) -> None:
         self.scheduler.stop()
 
+    def update_settings(self, values: dict[str, Any]) -> Settings:
+        """Apply non-secret runtime settings in place.
+
+        Threshold and screening changes take effect immediately; the scheduler reads the
+        live settings object each tick.  Secrets and repository settings stay env-driven.
+        """
+
+        for key, value in values.items():
+            if value is not None:
+                setattr(self.settings, key, value)
+        self.screening = ScreeningService(
+            weights=self.settings.screening_score_weights, thresholds=self.settings.screening_thresholds
+        )
+        self.rules = RuleEngine(settings=self.settings.risk_thresholds, clock=self._clock)
+        self.tracking.rule_engine = self.rules
+        if not self.settings.crawler_endpoint:
+            self.source_adapters[:] = [
+                SourceRouter(
+                    external=None,
+                    internal=PublicHttpSource(
+                        endpoint,
+                        SourceType(source_name),
+                        timeout_seconds=self.settings.crawler_timeout_seconds,
+                        max_retries=self.settings.crawler_max_retries,
+                        max_response_bytes=self.settings.crawler_max_response_bytes,
+                        min_interval_seconds=self.settings.crawler_min_interval_seconds,
+                        allowed_domains=self.settings.crawler_allowed_domains,
+                        user_agent=self.settings.crawler_user_agent,
+                        follow_redirects=self.settings.crawler_follow_redirects,
+                        respect_robots=self.settings.crawler_respect_robots,
+                    ),
+                )
+                for source_name, endpoint in self.settings.source_endpoints.items()
+            ]
+        else:
+            self.source_adapters[:] = self._default_sources()
+        return self.settings
     def run_evidence_tracking(self) -> TrackingRunResult:
         return self.run_tracking(since=self._clock() - self.settings.evidence_interval)
 
