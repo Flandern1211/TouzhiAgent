@@ -1,40 +1,57 @@
 # TouzhiAgent
 
-面向中国公募基金的个人研究辅助和风险监测系统。
+面向中国公募基金的个人研究辅助与风险监测 Agent。
 
-当前状态：v1 最小闭环已实现，支持本机运行和测试；内部基础爬虫可独立获取公开网页，外部爬虫（如配置）优先使用，远程数据源与 MySQL 需要通过环境变量配置。
+TouzhiAgent 支持手动维护基金候选和当前持仓，结合净值、公告、财经新闻、行业新闻与网络舆情，帮助用户比较基金、分析组合风险并持续发现需要关注的变化。
 
-## 已确认的 v1 能力
+> 仅用于研究和决策辅助，不构成投资建议。历史表现不代表未来表现。
 
-- 手动维护多只基金并进行客观、个性化筛选；
-- 手动维护当前持仓快照并分析组合风险；
-- 从公开行情、官方公告、财经/行业新闻和社交媒体持续跟踪；
-- 由固定规则触发风险复核，Agent 结合证据解释；
-- 在本机系统内显示风险提醒；
-- 默认简单爬虫，并可配置外部爬虫 API；
-- 内部爬虫支持超时、重试、请求头、编码、重定向、HTML 提取、域名白名单、限频、响应大小限制和可追溯失败状态；
-- 本机运行，MySQL 等基础服务连接服务器。
+## 核心能力
 
-详细范围见 [v1 需求规格](docs/requirements/fund-agent-v1-requirements.md)。
+- 多只基金的客观排序与个性化筛选；
+- 支持 A/C/E 等基金份额类别识别；
+- 当前持仓快照、收益、仓位、集中度和回撤分析；
+- 多来源信息跟踪与证据留存；
+- 固定规则发现异常，复核层解释风险；
+- 本机 Web 界面和系统内风险提醒；
+- 默认公开 HTTP 抓取器，可配置外部爬虫 API；
+- 可选连接远程 MySQL 持久化数据。
 
-## 当前不包含
+## 快速开始
 
-交易流水、账户自动导入、券商交易、自动调仓和外部消息推送尚未纳入 v1。
-
-## 项目文档
-
-- [项目结构](docs/project-structure.md)
-- [项目约定](docs/project-conventions.md)
-- [PRD 索引](docs/coding/PRD.md)
-- [API 合同](docs/coding/API.md)
-
-## 本机运行
+要求 Python `3.11+`：
 
 ```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 python -m fund_agent
 ```
 
-浏览器访问 `http://127.0.0.1:8000`。未配置数据库时使用内存存储；配置远程 MySQL 后自动使用 MySQL 持久化。环境变量前缀为 `FUND_AGENT_`，详见 [API 合同](docs/coding/API.md) 和 [需求规格](docs/requirements/fund-agent-v1-requirements.md)。
+打开 `http://127.0.0.1:8000`。未配置 MySQL 时使用内存存储；配置项统一使用 `FUND_AGENT_` 前缀。
 
-外部爬虫是可选配置：设置 `FUND_AGENT_CRAWLER_ENDPOINT` 后会优先请求它，失败时自动回到内部爬虫。至少应为需要跟踪的公开来源设置对应的 `FUND_AGENT_MARKET_ENDPOINT`、`FUND_AGENT_OFFICIAL_ENDPOINT`、`FUND_AGENT_NEWS_ENDPOINT` 或 `FUND_AGENT_SENTIMENT_ENDPOINT`；未配置的来源不会被系统猜测访问。
+## 当前版本
+
+当前为 v1 最小实现，重点覆盖：
+
+- 手动基金候选管理；
+- 多基金筛选；
+- 当前持仓组合分析；
+- 定时跟踪和系统内提醒。
+
+当前不包含交易执行、账户自动导入、逐笔交易流水、外部消息推送、登录、多用户权限和公开部署。生成式 LLM 与具体新闻/公告供应商解析器将在后续需求确认后接入。
+
+## 文档
+
+- [v1 需求规格](docs/requirements/fund-agent-v1-requirements.md)
+- [API 合同](docs/coding/API.md)
+- [最小实现技术设计](docs/coding/TSD/2026-08-27-fund-agent-v1-minimal-design.md)
+- [项目结构](docs/project-structure.md)
+- [项目约定](docs/project-conventions.md)
+
+## 开发验证
+
+```powershell
+python -m pytest -q
+python -m compileall -q src tests
+```
