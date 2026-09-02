@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TouzhiAgent</title>
+    <style>
+      :root { color-scheme: light; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f7f7f8; color: #17191c; }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      header { border-bottom: 1px solid #d8dce2; background: #fff; }
+      .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+      header .shell { display: flex; align-items: center; justify-content: space-between; min-height: 72px; gap: 24px; }
+      h1 { margin: 0; font-size: 25px; font-weight: 650; }
+      h2 { margin: 0 0 14px; font-size: 17px; }
+      p { margin: 5px 0 0; color: #616b77; }
+      main { padding: 24px 0 40px; }
+      nav { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid #d8dce2; }
+      nav button { border: 0; border-bottom: 3px solid transparent; background: transparent; color: #47515d; padding: 10px 14px; }
+      nav button.active { border-color: #e4002b; color: #17191c; font-weight: 650; }
+      .view { display: none; }
+      .view.active { display: block; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+      section { background: #fff; border: 1px solid #d8dce2; padding: 18px; min-width: 0; }
+      form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      label { display: grid; gap: 5px; color: #4a5561; font-size: 13px; }
+      input, select, button { min-height: 38px; border: 1px solid #bcc4ce; background: #fff; padding: 8px 10px; font: inherit; }
+      button { cursor: pointer; }
+      button.primary { background: #002fa7; border-color: #002fa7; color: #fff; }
+      button.danger { color: #c2162b; border-color: #c2162b; }
+      form button { align-self: end; }
+      table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14px; }
+      th, td { text-align: left; padding: 9px 7px; border-bottom: 1px solid #e5e8ec; vertical-align: top; }
+      th { color: #5e6874; font-weight: 600; }
+      .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+      .empty { color: #737e89; padding: 16px 0; }
+      .alert { border-left: 4px solid #e4002b; padding: 9px 12px; margin: 10px 0; background: #fff7f8; }
+      .status { padding: 5px 8px; border: 1px solid #cfd5dc; display: inline-block; margin: 3px; font-size: 12px; }
+      .message { min-height: 24px; color: #a51528; margin-top: 10px; }
+      .full { grid-column: 1 / -1; }
+      @media (max-width: 760px) { .grid, form { grid-template-columns: 1fr; } nav { overflow-x: auto; } header .shell { align-items: flex-start; padding: 16px 0; flex-direction: column; } }
+    </style>
+  </head>
+  <body>
+    <header><div class="shell"><div><h1>TouzhiAgent</h1><p>中国公募基金研究与风险监测</p></div><div class="toolbar"><button id="track-button" class="primary">运行跟踪</button><button id="refresh-button">刷新数据</button></div></div></header>
+    <main class="shell">
+      <nav aria-label="主要视图"><button data-view="funds" class="active">基金候选</button><button data-view="screening">基金筛选</button><button data-view="portfolio">持仓与组合</button><button data-view="tracking">跟踪与提醒</button></nav>
+
+      <div id="funds-view" class="view active grid">
+        <section><h2>添加基金</h2><form id="fund-form"><label>基金代码<input name="code" pattern="[0-9]{6}" required></label><label>基金名称/份额<input name="name"></label><label>类型<input name="category"></label><button class="primary">添加</button></form><div class="message" id="fund-message"></div></section>
+        <section><h2>候选列表</h2><div id="fund-list" class="empty">暂无基金</div></section>
+      </div>
+
+      <div id="screening-view" class="view grid">
+        <section><h2>筛选偏好</h2><form id="screening-form"><label>风险偏好<select name="risk"><option value="balanced">平衡</option><option value="conservative">保守</option><option value="aggressive">进取</option></select></label><label>持有期限<select name="horizon"><option value="long_term">中长期</option><option value="short_term">短期</option></select></label><button class="primary full">分析候选基金</button></form><p>先通过 API 或数据源补充基金指标；缺失指标会明确显示，不会生成虚假数值。</p></section>
+        <section><h2>筛选结果</h2><div id="screening-results" class="empty">尚未运行筛选</div></section>
+      </div>
+
+      <div id="portfolio-view" class="view grid">
+        <section><h2>持仓快照</h2><form id="holding-form"><label>基金代码<input name="code" pattern="[0-9]{6}" required></label><label>基金名称/份额<input name="name"></label><label>当前金额<input name="amount" type="number" min="0" step="0.01"></label><label>持有份额<input name="units" type="number" min="0" step="0.0001"></label><label>累计投入<input name="invested" type="number" min="0.01" step="0.01" required></label><button class="primary">保存快照</button></form><div class="message" id="holding-message"></div></section>
+        <section><h2>组合分析</h2><div id="portfolio-results" class="empty">暂无持仓</div></section>
+      </div>
+
+      <div id="tracking-view" class="view grid">
+        <section><h2>数据源状态</h2><div id="source-status" class="empty">尚未运行跟踪</div><p id="settings-status">正在读取跟踪配置</p></section>
+        <section><h2>系统提醒</h2><div id="alerts" class="empty">暂无提醒</div></section>
+        <section class="full"><h2>最近证据</h2><div id="evidence" class="empty">暂无证据</div></section>
+      </div>
+    </main>
+    <script>
+      const state = { funds: [], lastTracking: null };
+      const node = (tag, text, className) => { const element = document.createElement(tag); if (text !== undefined) element.textContent = text; if (className) element.className = className; return element; };
+      const clear = element => { while (element.firstChild) element.removeChild(element.firstChild); };
+      const message = (id, text) => { document.getElementById(id).textContent = text || ''; };
+      async function api(path, options) { const response = await fetch(path, options); if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(typeof body.detail === 'string' ? body.detail : '请求失败'); } return response.status === 204 ? null : response.json(); }
+      function table(headers, rows) { const result = node('table'); const thead = node('thead'); const head = node('tr'); headers.forEach(header => head.appendChild(node('th', header))); thead.appendChild(head); result.appendChild(thead); const body = node('tbody'); rows.forEach(values => { const row = node('tr'); values.forEach(value => { const cell = node('td'); if (value instanceof Node) cell.appendChild(value); else cell.textContent = value ?? '-'; row.appendChild(cell); }); body.appendChild(row); }); result.appendChild(body); return result; }
+      function renderFunds() { const root = document.getElementById('fund-list'); clear(root); if (!state.funds.length) { root.appendChild(node('div', '暂无基金', 'empty')); return; } root.appendChild(table(['代码','名称','类型','份额','操作'], state.funds.map(fund => { const remove = node('button', '删除', 'danger'); remove.onclick = async () => { await api(`/api/funds/${fund.code}`, {method:'DELETE'}); await refresh(); }; return [fund.code, fund.name, fund.category, fund.share_class, remove]; }))); }
+      function renderPortfolio(data) { const root = document.getElementById('portfolio-results'); clear(root); if (!data.holdings?.length) { root.appendChild(node('div','暂无持仓','empty')); return; } root.appendChild(node('p', `组合市值 ${data.total_value.toFixed(2)} · 累计投入 ${data.total_invested.toFixed(2)} · 风险 ${data.risk_level}`)); root.appendChild(table(['基金','市值','仓位','盈亏'], data.holdings.map(item => [item.fund.code, item.value.toFixed(2), `${(item.weight*100).toFixed(1)}%`, item.gain.toFixed(2)]))); }
+      function renderTracking(data) { state.lastTracking = data; const statuses = document.getElementById('source-status'); clear(statuses); const entries = Object.values(data.source_statuses || {}); if (!entries.length) statuses.appendChild(node('div','未配置数据源','empty')); else entries.forEach(item => { const box=node('div',undefined,'status'); const path=item.fallback ? '内部（外部失败后）' : (item.crawler||'-'); const detail=item.failure_reason || item.error || '-'; box.textContent=`${item.name}: ${item.status} · ${path} · ${item.evidence_count} 条 · ${detail}`; statuses.appendChild(box); }); const evidence = document.getElementById('evidence'); clear(evidence); if (!data.evidence?.length) evidence.appendChild(node('div','暂无证据','empty')); else evidence.appendChild(table(['来源','爬虫路径','标的','状态','失败/降级','时间','链接'], data.evidence.slice(0,20).map(item => { const link = item.url ? node('a','原文') : '-'; if (item.url) { link.href=item.url; link.target='_blank'; link.rel='noopener noreferrer'; } const metadata=item.metadata||{}; const path=metadata.fallback ? '内部（外部失败后）' : (metadata.crawler||'-'); const detail=metadata.fallback ? `外部失败：${metadata.external_failure_reason||'-'}` : (metadata.failure_reason||'-'); return [item.source_type,path,item.subject,item.status,detail,item.effective_at||item.collected_at,link]; })))); }
+      function renderAlerts(alerts) { const root = document.getElementById('alerts'); clear(root); if (!alerts.length) { root.appendChild(node('div','暂无提醒','empty')); return; } alerts.forEach(item => { const box=node('div',undefined,'alert'); box.appendChild(node('strong',`${item.subject} · ${item.level}`)); box.appendChild(node('div',item.summary)); if (item.uncertainty) box.appendChild(node('small',item.uncertainty)); root.appendChild(box); }); }
+      async function refresh() { state.funds = await api('/api/funds'); renderFunds(); renderAlerts(await api('/api/alerts')); renderPortfolio(await api('/api/portfolio')); const settings = await api('/api/settings'); const domains=settings.crawler_allowed_domains?.length ? settings.crawler_allowed_domains.join(',') : '来源端点域名'; document.getElementById('settings-status').textContent = `完整分析：${settings.full_analysis_schedule}（${settings.full_analysis_timezone}） · 证据检查：${settings.evidence_interval_hours} 小时 · 内部爬虫：${settings.crawler_timeout_seconds}s 超时，${settings.crawler_max_retries} 次重试，域名：${domains}`; }
+      document.querySelectorAll('nav button').forEach(button => button.onclick = () => { document.querySelectorAll('nav button,.view').forEach(element => element.classList.remove('active')); button.classList.add('active'); document.getElementById(`${button.dataset.view}-view`).classList.add('active'); });
+      document.getElementById('fund-form').onsubmit = async event => { event.preventDefault(); message('fund-message',''); try { const data=Object.fromEntries(new FormData(event.target)); await api('/api/funds',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)}); event.target.reset(); await refresh(); } catch(error) { message('fund-message',error.message); } };
+      document.getElementById('holding-form').onsubmit = async event => { event.preventDefault(); message('holding-message',''); try { const data=Object.fromEntries(new FormData(event.target)); ['amount','units'].forEach(key => { if (!data[key]) delete data[key]; else data[key]=Number(data[key]); }); data.invested=Number(data.invested); data.as_of=new Date().toISOString(); await api('/api/holdings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)}); event.target.reset(); await refresh(); } catch(error) { message('holding-message',error.message); } };
+      document.getElementById('screening-form').onsubmit = async event => { event.preventDefault(); const preference=Object.fromEntries(new FormData(event.target)); const results=await api('/api/screening',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({funds:state.funds,preference})}); const root=document.getElementById('screening-results'); clear(root); if (!results.length) root.appendChild(node('div','暂无基金','empty')); else root.appendChild(table(['排名','基金','标签','分数','风险原因'],results.map(item => [item.personalized_rank,item.code,item.label,item.personalized_score.toFixed(3),(item.risk_reasons||[]).join('；')||'-']))); };
+      document.getElementById('track-button').onclick = async () => { try { renderTracking(await api('/api/tracking/run',{method:'POST',headers:{'content-type':'application/json'},body:'{}'})); renderAlerts(await api('/api/alerts')); document.querySelector('[data-view="tracking"]').click(); } catch(error) { alert(error.message); } };
+      document.getElementById('refresh-button').onclick = refresh;
+      refresh();
+    </script>
+  </body>
+</html>

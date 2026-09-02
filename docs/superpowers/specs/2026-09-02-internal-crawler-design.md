@@ -35,6 +35,7 @@ Existing `FUND_AGENT_CRAWLER_ENDPOINT` and `FUND_AGENT_CRAWLER_API_KEY` configur
 - `FUND_AGENT_CRAWLER_MIN_INTERVAL_SECONDS`: minimum interval between requests to the same host.
 - `FUND_AGENT_CRAWLER_USER_AGENT`: request user agent.
 - `FUND_AGENT_CRAWLER_FOLLOW_REDIRECTS`: whether redirects are followed within the allowlist.
+- `FUND_AGENT_CRAWLER_RESPECT_ROBOTS`: whether `robots.txt` is checked before fetching; defaults to true.
 
 Defaults are conservative and suitable for local development. External API keys remain excluded from settings serialization and logs.
 
